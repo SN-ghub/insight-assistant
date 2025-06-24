@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Insight Assistant</title>
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      :root {
+        --accent: #0066ff;
+        --accent-dark: #0047d8;
+        --dark: #0e0846;
+        --text-muted: #4b5563;
+        --bg-light: #fafcff;
+      }
+      *, *::before, *::after { box-sizing: border-box; }
+      body { margin: 0; font-family: "Inter", sans-serif; color: var(--dark); background: #ffffff; }
+      a { text-decoration: none; color: inherit; }
+      .btn-primary { display:inline-flex; align-items:center; gap:8px; background:var(--accent); color:#fff; padding:14px 28px; border-radius:9999px; font-weight:600; border:none; cursor:pointer; transition:background .2s; }
+      .btn-primary:hover { background:var(--accent-dark); }
+      .btn-primary[disabled]{ opacity:.55; cursor:not-allowed; }
+      .dotted-bg{ position:relative; background:var(--bg-light); }
+      .dotted-bg::before{ content:""; position:absolute; inset:0; background-image:radial-gradient(circle,#d1d5db 1px,transparent 1px); background-size:22px 22px; opacity:.5; pointer-events:none; }
+      .container{ width:min(1200px,90%); margin-inline:auto; }
+      /* header */
+      .navbar{ display:flex; justify-content:center; padding:64px 0; }
+      .logo{ display:flex; align-items:center; gap:10px; font-size:2.25rem; font-weight:900; line-height:1.2; }
+      .logo .icon{ font-size:1.4em; color:var(--accent); }
+      .logo .gradient{ background:linear-gradient(90deg,var(--accent)0%,#00eaff 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+      /* hero */
+      .hero{ display:flex; align-items:center; justify-content:space-between; padding:120px 64px; overflow:hidden; }
+      .hero-content{ max-width:540px; position:relative; z-index:2; margin-left:260px; }
+      .hero h1{ margin:0 0 24px; font-size:clamp(2.75rem,6vw,4rem); font-weight:800; line-height:1.1; }
+      .hero .accent{ color:var(--accent); }
+      .hero p{ font-size:1.125rem; color:var(--text-muted); margin:0; }
+      /* sections */
+      section.section{ padding:80px 64px; border-radius:16px; margin-bottom:64px; }
+      .section h2{ font-size:2.25rem; font-weight:700; margin:0 0 24px; }
+      /* form */
+      input[type="file"]{ font-size:1rem; padding:10px; }
+      #genSummaryBtn, #aiSummaryBtn{ margin-left:16px; }
+      .select-group{ margin-top:14px; display:none; }
+      /* visual */
+      #visWrapper{ margin-top:40px; display:none; }
+      #visWrapper h3{ margin:32px 0 12px; font-size:1.25rem; }
+      /* footer */
+      .footer{ text-align:center; font-size:.875rem; color:var(--text-muted); padding:40px 16px 60px; }
+    </style>
+  </head>
+  <body>
+    <!-- HEADER -->
+    <nav class="navbar"><div class="logo"><span class="icon">⚡</span><span class="gradient">Insight&nbsp;Assistant</span></div></nav>
+
+    <!-- HERO -->
+    <section class="hero dotted-bg">
+      <div class="hero-content">
+        <h1>Share data <span class="accent">anywhere</span></h1>
+        <p>Deliver data into your consumer’s cloud data lake or warehouse—without ever leaving your own.</p>
+      </div>
+    </section>
+
+    <main class="container">
+      <!-- UPLOAD -->
+      <section id="uploadSection" class="section dotted-bg">
+        <h2>Data upload</h2>
+        <p>Upload your CSV or text file to get started.</p>
+        <input type="file" id="fileInput" accept=".csv,.txt" />
+        <button class="btn-primary" id="genSummaryBtn" disabled>Local summary</button>
+        <button class="btn-primary" id="aiSummaryBtn" disabled>AI summary</button>
+        <div id="valueSelectWrapper" class="select-group">
+          <label for="valueSelect">Value column:</label>
+          <select id="valueSelect"></select>
+        </div>
+      </section>
+
+      <!-- SUMMARY -->
+      <section id="summarySection" class="section">
+        <h2>Summary</h2>
+        <ul id="summaryList"><li>No summary generated yet.</li></ul>
+        <div id="visWrapper"><h3>Trend over time</h3><canvas id="chartCanvas" height="260"></canvas></div>
+        <button class="btn-primary" id="exportBtn" disabled>Export report (PDF)</button>
+      </section>
+    </main>
+
+    <footer class="footer dotted-bg">Disclaimer: This content was generated with the assistance of artificial intelligence. While we strive for accuracy, users should verify information independently, especially for important decisions.</footer>
+
+    <!-- ============================== JS ============================== -->
+    <script>
+      const fileInput = document.getElementById('fileInput');
+      const genBtn = document.getElementById('genSummaryBtn');
+      const aiBtn = document.getElementById('aiSummaryBtn');
+      const exportBtn = document.getElementById('exportBtn');
+      const summaryList = document.getElementById('summaryList');
+      const visWrapper = document.getElementById('visWrapper');
+      const chartCanvas = document.getElementById('chartCanvas');
+      const valueSelectWrapper = document.getElementById('valueSelectWrapper');
+      const valueSelect = document.getElementById('valueSelect');
+
+      let chartInstance;
+      let parsedData = null;
+      let rawText = "";
+      let yearIndex = -1;
+
+      /* ---------------- File handling ---------------- */
+      fileInput.addEventListener('change', () => {
+        resetState();
+        if(!fileInput.files.length) return;
+        const reader = new FileReader();
+        reader.onload = e => {
+          rawText = e.target.result;
+          analyzeFile(rawText);
+        };
+        reader.readAsText(fileInput.files[0]);
+      });
+
+      valueSelect.addEventListener('change', () => {
+        const disabled = valueSelect.value === "";
+        genBtn.disabled = disabled;
+        aiBtn.disabled  = disabled;
+      });
+
+      genBtn.addEventListener('click', () => {
+        if(parsedData) generateLocalSummary();
+      });
+
+      aiBtn.addEventListener('click', async () => {
+        if(parsedData) await generateAiSummary();
+      });
+
+      /* ---------------- Reset helpers ---------------- */
+      function resetState(){
+        genBtn.disabled = true;
+        aiBtn.disabled = true;
+        valueSelectWrapper.style.display = 'none';
+        summaryList.innerHTML = '<li>No summary generated yet.</li>';
+        visWrapper.style.display = 'none';
+        if(chartInstance) chartInstance.destroy();
+      }
+
+      /* ---------------- Simple CSV parser ---------------- */
+      function analyzeFile(text){
+        const rows = text.trim().split(/\r?\n/).map(r=>r.split(/,|\t/));
+        if(rows.length < 2){ alert('File seems empty'); return; }
+        const headers = rows[0];
+        const records = rows.slice(1);
+        parsedData = { headers, records };
+
+        // detect year column
+        yearIndex = headers.findIndex(h=>/year/i.test(h));
+        if(yearIndex === -1){
+          yearIndex = headers.findIndex((h,i)=> records.every(r=>{ const v=parseInt(r[i]); return !isNaN(v) && v>1900 && v<2100; }));
+        }
+        if(yearIndex === -1){ alert("Couldn't detect a year column."); parsedData = null; return; }
+
+        const numericIndices = headers.map((h,i)=>i).filter(i=> i!==yearIndex && records.every(r=>!isNaN(parseFloat(r[i]))));
+        if(!numericIndices.length){ alert('No numeric columns found besides year.'); parsedData = null; return; }
+
+        valueSelect.innerHTML = numericIndices.map(i=>`<option value="${i}">${headers[i]}</option>`).join('');
+        valueSelectWrapper.style.display = 'block';
+      }
+
+      /* ---------------- Local summary ---------------- */
+      function generateLocalSummary(){
+        const { headers, records } = parsedData;
+        const valIdx = parseInt(valueSelect.value);
+        const years = records.map(r=>parseInt(r[yearIndex]));
+        const values = records.map(r=>parseFloat(r[valIdx]));
+
+        summaryList.innerHTML = '';
+        summaryList.appendChild(buildStatsList(headers[valIdx], years, values));
+
+        plotLine(years, values, headers[valIdx]);
+      }
+
+      /* ---------------- AI summary with graceful fallback ---------------- */
+      async function generateAiSummary(){
+        summaryList.innerHTML = '<li>Contacting GPT‑4o… (this may take a few seconds)</li>';
+        try{
+          const resp = await fetch('/api/ai-analyze',{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ csv: rawText })
+          });
+
+          if(!resp.ok) throw new Error('API unavailable');
+          const data = await resp.json();
+
+          summaryList.innerHTML = '';
+          data.summary.split(/\n+/).forEach(line=> addItem(line));
+          if(data.chart){ plotLine(data.chart.years, data.chart.values, data.chart.label); }
+        }catch(err){
+          console.warn('AI summary failed, falling back to local summary:', err.message);
+          generateLocalSummary();
+          const note = document.createElement('li');
+          note.style.color = 'var(--text-muted)';
+          note.style.fontStyle = 'italic';
+          note.textContent = 'AI summary service is unavailable; showing quick local summary instead.';
+          summaryList.insertBefore(note, summaryList.firstChild);
+        }
+      }
+
+      /* ---------------- Utilities ---------------- */
+      function buildStatsList(label, years, values){
+        const frag = document.createDocumentFragment();
+        const li = txt=>{ const l=document.createElement('li'); l.textContent=txt; return l; };
+        const avg = (values.reduce((a,b)=>a+b,0)/values.length).toFixed(2);
+        const minVal = Math.min(...values);
+        const maxVal = Math.max(...values);
+        const minYear = years[values.indexOf(minVal)];
+        const maxYear = years[values.indexOf(maxVal)];
+        const pctChange = (((values[values.length-1]-values[0])/values[0])*100).toFixed(1);
+        frag.appendChild(li(`Dataset spans ${years[0]}–${years[years.length-1]} (${years.length} rows).`));
+        frag.appendChild(li(`Average ${label}: ${avg}.`));
+        frag.appendChild(li(`Highest (${maxVal}) in ${maxYear}; lowest (${minVal}) in ${minYear}.`));
+        frag.appendChild(li(`Overall change from first to last year: ${pctChange}%`));
+        return frag;
+      }
+
+      function addItem(text){
+        const li = document.createElement('li');
+        li.textContent = text;
+        summaryList.appendChild(li);
+      }
+
+      function plotLine(x, y, label){
+        if(chartInstance) chartInstance.destroy();
+        chartInstance = new Chart(chartCanvas,{
+          type:'line',
+          data:{ labels:x, datasets:[{ label, data:y, borderColor:getVar('--accent'), tension:0.25, fill:false }] },
+          options:{ plugins:{ legend:{display:false} }, scales:{ x:{ title:{display:true,text:'Year'} }, y:{ title:{display:true,text:label} } } }
+        });
+        visWrapper.style.display = 'block';
+        exportBtn.disabled = false;
+      }
+
+      function getVar(name){ return getComputedStyle(document.documentElement).getPropertyValue(name); }
+    </script>
+  </body>
+</html>
