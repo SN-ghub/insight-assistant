@@ -179,7 +179,7 @@
       async function generateAiSummary(){
         summaryList.innerHTML = '<li>Contacting GPT‑4o… (this may take a few seconds)</li>';
         try{
-          const AI_API = "https://insight-assistant.vercel.app/api/ai-analyze";
+          const AI_API = "https://insight-assistant-one.vercel.app/api/ai-analyze";
           const resp = await fetch(AI_API, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
