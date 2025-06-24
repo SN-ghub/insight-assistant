@@ -179,11 +179,13 @@
       async function generateAiSummary(){
         summaryList.innerHTML = '<li>Contacting GPT‑4o… (this may take a few seconds)</li>';
         try{
-          const resp = await fetch('/api/ai-analyze',{
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({ csv: rawText })
+          const AI_API = "https://insight-assistant.vercel.app/api/ai-analyze";
+          const resp = await fetch(AI_API, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ csv: rawText })
           });
+
 
           if(!resp.ok) throw new Error('API unavailable');
           const data = await resp.json();
