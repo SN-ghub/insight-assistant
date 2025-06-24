@@ -1,5 +1,4 @@
 // api/ai-analyze.js
-import fetch from "node-fetch";           // <–– Node 18 includes fetch, but explicit is fine.
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
