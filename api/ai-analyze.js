@@ -1,36 +1,41 @@
 // api/ai-analyze.js
 
 export default async function handler(req, res) {
-  // ─── 1) Set CORS headers for ALL responses ───────────────────────────────
+  // CORS headers
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  // ─── 2) Handle the preflight OPTIONS request ───────────────────────────
+  // Preflight support
   if (req.method === "OPTIONS") {
     return res.status(200).end();
   }
 
-  // ─── 3) Now only allow POST ──────────────────────────────────────────────
+  // Only POST
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Use POST" });
   }
 
-  // ─── 4) Validate payload ─────────────────────────────────────────────────
+  // Validate payload
   const { csv } = req.body || {};
   if (!csv) {
     return res.status(400).json({ error: "Missing csv field" });
   }
 
-  // ─── 5) Check API key ────────────────────────────────────────────────────
+  // If no API key configured, return stubbed response (free-tier mode)
   const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
   if (!OPENAI_API_KEY) {
-    console.error("OPENAI_API_KEY not set");
-    return res.status(500).json({ error: "Server mis-config" });
+    // Stub data for testing without API access
+    const stubYears = [2005, 2006, 2007, 2008, 2009];
+    const stubValues = [10, 12, 9, 11, 13];
+    return res.status(200).json({
+      summary: "🤖 [stub] No API key configured. Showing sample AI summary: malaria incidence rose slightly from 10 to 13 between 2005 and 2009.",
+      chart: { years: stubYears, values: stubValues, label: "Stub Value" }
+    });
   }
 
+  // Real OpenAI call
   try {
-    // ─── 6) Call OpenAI ────────────────────────────────────────────────────
     const openaiResp = await fetch(
       "https://api.openai.com/v1/chat/completions",
       {
@@ -48,10 +53,7 @@ export default async function handler(req, res) {
               content:
                 "You are a data-analyst AI. Return JSON with keys: summary (<=120 words) and chart {years, values, label}. Respond with ONLY JSON.",
             },
-            {
-              role: "user",
-              content: `Analyze this CSV:\n${csv}`,
-            },
+            { role: "user", content: `Analyze this CSV:\n${csv}` },
           ],
           response_format: { type: "json_object" },
         }),
