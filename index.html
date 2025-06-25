@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -9,6 +8,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- jsPDF CDN for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
       :root {
         --accent: #0066ff;
@@ -37,62 +38,17 @@
       .hero h1{ margin:0 0 24px; font-size:clamp(2.75rem,6vw,4rem); font-weight:800; line-height:1.1; }
       .hero .accent{ color:var(--accent); }
       .hero p{ font-size:1.125rem; color:var(--text-muted); margin:0; }
-      .hero {
-        position: relative;
-        background: var(--bg-light);
-        padding-bottom: 0;
-        overflow: hidden;
-      }
-      .hero-wave-wrapper {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        height: 180px;
-        overflow: hidden;
-        z-index: 1;
-      }
-      .hero-wave {
-        width: 100%;
-        height: 100%;
-      }
-      .wave1, .wave2, .wave3 {
-        transform-origin: center;
-        animation-timing-function: ease-in-out;
-        animation-iteration-count: infinite;
-      }
-      /* More dramatic, distinct vertical motion for each wave */
-      .wave1 {
-        animation-name: floatWave1;
-        animation-duration: 10s;
-      }
-      .wave2 {
-        animation-name: floatWave2;
-        animation-duration: 14s;
-        animation-delay: -4s;
-      }
-      .wave3 {
-        animation-name: floatWave3;
-        animation-duration: 12s;
-        animation-delay: -2s;
-      }
-      /* Keyframes for separate wave motions */
-      @keyframes floatWave1 {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-30px); }
-      }
-      @keyframes floatWave2 {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(30px); }
-      }
-      @keyframes floatWave3 {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-20px); }
-      }
-      .hero-content {
-        position: relative;
-        z-index: 2;
-      }
+      .hero { position: relative; background: var(--bg-light); padding-bottom: 0; overflow: hidden; }
+      .hero-wave-wrapper { position: absolute; bottom: 0; left: 0; width: 100%; height: 180px; overflow: hidden; z-index: 1; }
+      .hero-wave { width: 100%; height: 100%; }
+      .wave1, .wave2, .wave3 { transform-origin: center; animation-timing-function: ease-in-out; animation-iteration-count: infinite; }
+      .wave1 { animation-name: floatWave1; animation-duration: 10s; }
+      .wave2 { animation-name: floatWave2; animation-duration: 14s; animation-delay: -4s; }
+      .wave3 { animation-name: floatWave3; animation-duration: 12s; animation-delay: -2s; }
+      @keyframes floatWave1 { 0%,100%{transform:translateY(0);}50%{transform:translateY(-30px);} }
+      @keyframes floatWave2 { 0%,100%{transform:translateY(0);}50%{transform:translateY(30px);} }
+      @keyframes floatWave3 { 0%,100%{transform:translateY(0);}50%{transform:translateY(-20px);} }
+      .hero-content { position: relative; z-index: 2; }
       /* sections */
       section.section{ padding:80px 64px; border-radius:16px; margin-bottom:64px; }
       .section h2{ font-size:2.25rem; font-weight:700; margin:0 0 24px; }
@@ -106,23 +62,9 @@
       /* footer */
       .footer{ text-align:center; font-size:.875rem; color:var(--text-muted); padding:40px 16px 60px; }
       /* ✅ Add new styles below */
-      .features-list {
-        padding-left: 1.5rem;
-        margin: 0;
-        color: var(--text-muted);
-        font-size: 1.125rem;
-        list-style: none;
-      }
-      .features-list li {
-        position: relative;
-        margin-bottom: 12px;
-        padding-left: 1.5em;
-      }
-      .features-list li::before {
-        content: "✔️";
-        position: absolute;
-        left: 0;
-      }
+      .features-list { padding-left: 1.5rem; margin: 0; color: var(--text-muted); font-size: 1.125rem; list-style: none; }
+      .features-list li { position: relative; margin-bottom: 12px; padding-left: 1.5em; }
+      .features-list li::before { content: "✔️"; position: absolute; left: 0; }
     </style>
   </head>
   <body>
@@ -140,17 +82,11 @@
           <li> Automate reports to keep your team up to date in seconds</li>
         </ul>
       </div>
-      <!-- Animated SVG Wave Background -->
       <div class="hero-wave-wrapper">
         <svg class="hero-wave" viewBox="0 0 1440 320" preserveAspectRatio="none">
-          <!-- Blue wave -->
           <path class="wave1" fill="#3399ff" d="M0,224L80,213.3C160,203,320,181,480,165.3C640,149,800,139,960,160C1120,181,1280,235,1360,261.3L1440,288L1440,320L1360,320C1280,320,1120,320,960,320C800,320,640,320,480,320C320,320,160,320,80,320L0,320Z"></path>
-          
-          <!-- Green wave -->
-          <path class="wave2" fill="#33cc99" d="M0,192L80,197.3C160,203,320,213,480,208C640,203,800,181,960,170.7C1120,160,1280,160,1360,160L1440,160L1440,320L1360,320C1280,320,1120,320,960,320C800,320,640,320,480,320C320,320,160,320,80,320L0,320Z"></path>
-          
-          <!-- Purple wave -->
-          <path class="wave3" fill="#9966cc" d="M0,256L80,250.7C160,245,320,235,480,218.7C640,203,800,181,960,165.3C1120,149,1280,139,1360,133.3L1440,128L1440,320L1360,320C1280,320,1120,320,960,320C800,320,640,320,480,320C320,320,160,320,80,320L0,320Z"></path>
+          <path class="wave2" fill="#33cc99" d="M0,192L80,197.3C160,203,320,213,480,208C640,203,800,181,960,170.7C1120,160,1280,160,1360,160L1440,160L1440,320L1360,320C1280,320,1120,320,960,320C800,320,640,320,480,320,320,320,160,320,80,320,0,320Z"></path>
+          <path class="wave3" fill="#9966cc" d="M0,256L80,250.7C160,245,320,235,480,218.7C640,203,800,181,960,165.3C1120,149,1280,139,1360,133.3L1440,128L1440,320L1360,320C1280,320,1120,320,960,320C800,320,640,320,480,320,320,320,160,320,80,320L0,320Z"></path>
         </svg>
       </div>
     </section>
@@ -173,6 +109,7 @@
       <section id="summarySection" class="section">
         <h2>Summary</h2>
         <ul id="summaryList"><li>No summary generated yet.</li></ul>
+        <!-- Graph only for AI summary -->
         <div id="visWrapper"><h3>Trend over time</h3><canvas id="chartCanvas" height="260"></canvas></div>
         <button class="btn-primary" id="exportBtn" disabled>Export report (PDF)</button>
       </section>
@@ -223,10 +160,13 @@
         if(parsedData) await generateAiSummary();
       });
 
+      exportBtn.addEventListener('click', exportPdfReport);
+
       /* ---------------- Reset helpers ---------------- */
       function resetState(){
         genBtn.disabled = true;
         aiBtn.disabled = true;
+        exportBtn.disabled = true;
         valueSelectWrapper.style.display = 'none';
         summaryList.innerHTML = '<li>No summary generated yet.</li>';
         visWrapper.style.display = 'none';
@@ -241,7 +181,6 @@
         const records = rows.slice(1);
         parsedData = { headers, records };
 
-        // detect year column
         yearIndex = headers.findIndex(h=>/year/i.test(h));
         if(yearIndex === -1){
           yearIndex = headers.findIndex((h,i)=> records.every(r=>{ const v=parseInt(r[i]); return !isNaN(v) && v>1900 && v<2100; }));
@@ -251,7 +190,7 @@
         const numericIndices = headers.map((h,i)=>i).filter(i=> i!==yearIndex && records.every(r=>!isNaN(parseFloat(r[i]))));
         if(!numericIndices.length){ alert('No numeric columns found besides year.'); parsedData = null; return; }
 
-        valueSelect.innerHTML = numericIndices.map(i=>`<option value="${i}">${headers[i]}</option>`).join('');
+        valueSelect.innerHTML = numericIndices.map(i=>`<option value=\"${i}\">${headers[i]}</option>`).join('');
         valueSelectWrapper.style.display = 'block';
       }
 
@@ -264,21 +203,19 @@
 
         summaryList.innerHTML = '';
         summaryList.appendChild(buildStatsList(headers[valIdx], years, values));
-
-        plotLine(years, values, headers[valIdx]);
+        // No graph for local summary
       }
 
-      /* ---------------- AI summary with graceful fallback ---------------- */
+      /* ---------------- AI summary with PDF enable ---------------- */
       async function generateAiSummary(){
         summaryList.innerHTML = '<li>Contacting GPT‑4o… (this may take a few seconds)</li>';
         try{
           const AI_API = "https://insight-assistant-one.vercel.app/api/ai-analyze";
           const resp = await fetch(AI_API, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ csv: rawText })
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ csv: rawText })
           });
-
 
           if(!resp.ok) throw new Error('API unavailable');
           const data = await resp.json();
@@ -286,6 +223,8 @@
           summaryList.innerHTML = '';
           data.summary.split(/\n+/).forEach(line=> addItem(line));
           if(data.chart){ plotLine(data.chart.years, data.chart.values, data.chart.label); }
+          // enable export after AI summary
+          exportBtn.disabled = false;
         }catch(err){
           console.warn('AI summary failed, falling back to local summary:', err.message);
           generateLocalSummary();
@@ -314,11 +253,7 @@
         return frag;
       }
 
-      function addItem(text){
-        const li = document.createElement('li');
-        li.textContent = text;
-        summaryList.appendChild(li);
-      }
+      function addItem(text){ const li=document.createElement('li'); li.textContent=text; summaryList.appendChild(li); }
 
       function plotLine(x, y, label){
         if(chartInstance) chartInstance.destroy();
@@ -328,14 +263,34 @@
           options:{ plugins:{ legend:{display:false} }, scales:{ x:{ title:{display:true,text:'Year'} }, y:{ title:{display:true,text:label} } } }
         });
         visWrapper.style.display = 'block';
-        exportBtn.disabled = false;
+      }
+
+      function exportPdfReport(){
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        let yPos = 20;
+        doc.setFontSize(16);
+        doc.text('Insight Assistant Report', 14, yPos);
+        yPos += 10;
+        doc.setFontSize(12);
+        // add summary text
+        summaryList.querySelectorAll('li').forEach(li => {
+          const text = li.textContent;
+          doc.text(text, 14, yPos);
+          yPos += 6;
+          if(yPos > 270){ doc.addPage(); yPos = 20; }
+        });
+        // add chart image if present
+        if(chartInstance){
+          const imgData = chartCanvas.toDataURL('image/png');
+          doc.addPage();
+          doc.text('Trend over time', 14, 20);
+          doc.addImage(imgData, 'PNG', 14, 30, 180, 100);
+        }
+        doc.save('insight-report.pdf');
       }
 
       function getVar(name){ return getComputedStyle(document.documentElement).getPropertyValue(name); }
     </script>
-  
   </body>
-  <script src="https://cdn.botpress.cloud/webchat/v3.0/inject.js"></script>
-  <script src="https://files.bpcontent.cloud/2025/06/25/12/20250625121050-Q2T148ZY.js"></script>
-
 </html>
