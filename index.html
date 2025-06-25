@@ -264,33 +264,44 @@
         });
         visWrapper.style.display = 'block';
       }
-
       function exportPdfReport(){
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        let yPos = 20;
-        doc.setFontSize(16);
-        doc.text('Insight Assistant Report', 14, yPos);
-        yPos += 10;
-        doc.setFontSize(12);
-        // add summary text
+        const doc = new jsPDF({ unit: 'pt', format: 'letter' });
+        const margin = 40;
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const usableWidth = pageWidth - margin * 2;
+        let yPos = margin;
+        // Title
+        doc.setFontSize(14);
+        doc.text('Insight Assistant Report', margin, yPos);
+        yPos += 20;
+        // Summary text (wrapped)
+        doc.setFontSize(10);
+        const lineHeight = 12;
+        const textLines = [];
         summaryList.querySelectorAll('li').forEach(li => {
-          const text = li.textContent;
-          doc.text(text, 14, yPos);
-          yPos += 6;
-          if(yPos > 270){ doc.addPage(); yPos = 20; }
+          const wrapped = doc.splitTextToSize(li.textContent, usableWidth);
+          textLines.push(...wrapped);
         });
-        // add chart image if present
-        if(chartInstance){
+        for (const line of textLines) {
+          // stop before chart area
+          if (yPos + lineHeight > doc.internal.pageSize.getHeight() - margin - 140) break;
+          doc.text(line, margin, yPos);
+          yPos += lineHeight;
+        }
+        // Chart image at bottom
+        if (chartInstance) {
           const imgData = chartCanvas.toDataURL('image/png');
-          doc.addPage();
-          doc.text('Trend over time', 14, 20);
-          doc.addImage(imgData, 'PNG', 14, 30, 180, 100);
+          const imgWidth = usableWidth;
+          const imgHeight = imgWidth * (chartCanvas.height / chartCanvas.width);
+          const imgY = doc.internal.pageSize.getHeight() - margin - imgHeight;
+          doc.addImage(imgData, 'PNG', margin, imgY, imgWidth, imgHeight);
         }
         doc.save('insight-report.pdf');
-      }
-
+        }
       function getVar(name){ return getComputedStyle(document.documentElement).getPropertyValue(name); }
     </script>
+    <script src="https://cdn.botpress.cloud/webchat/v3.0/inject.js"></script>
+    <script src="https://files.bpcontent.cloud/2025/06/25/12/20250625121050-Q2T148ZY.js"></script>
   </body>
 </html>
